@@ -1,0 +1,258 @@
+_scripting_: Utilities for writing Scheme scripts
+=================================================
+
+By Ryan Culpepper (ryanc at plt-scheme dot org)
+
+Keywords: _script_, _scripting_, _files_, _system_, _path_
+
+_scripting.ss_
+--------------
+
+To use: (require (planet "scripting.ss" ("ryanc" "scripting.plt" 1 1)))
+
+Provides everything described in this document.
+
+_byteslike.ss_
+--------------
+
+To use: (require (planet "byteslike.ss" ("ryanc" "scripting.plt" 1 1)))
+
+Some functions can accept either a bytes or a string for a particular
+argument. This module provides a predicate, conversion functions, and
+utility procedures for byteslike values.
+
+This module uses utf8 encoding for all conversions. If you care about
+the actual encoding being used, do not use this module.
+
+> byteslike ::= bytes | string
+
+> (byteslike? any) -> boolean
+
+Predicate for byteslike values.
+
+> (byteslike->bytes byteslike) -> bytes
+
+Identify function on bytes; converts strings to bytes using utf8.
+
+> (byteslike->string byteslike) -> string
+
+Identity function on strings; converts bytes to strings using utf8.
+
+> (byteslike-append byteslike ...) -> byteslike
+
+Appends many byteslikes into a single byteslike.
+
+_pathlike.ss_
+-------------
+
+To use: (require (planet "pathlike.ss" ("ryanc" "scripting.plt" 1 1)))
+
+Paths and strings can both be used to refer to filesystem entities,
+but they interact differently with other parts of the system. For
+example, when composing command string to invoke using system, paths
+must be converted to string form. This module provides a predicate and
+conversion utilities for a pathlike type.
+
+> pathlike ::= path | string
+
+> (pathlike? any) -> boolean
+
+Predicate for pathlike values.
+
+> (pathlike->path pathlike) -> path
+> (pathlike->string pathlike) -> string
+
+Converts a pathlike into one of its specific data representations.
+
+> (pathlike->bytes pathlike) -> bytes
+
+Converts a pathlike into a bytes (note that a bytes is not a pathlike).
+
+
+_loud.ss_
+---------
+
+To use: (require (planet "loud.ss" ("ryanc" "scripting.plt" 1 1)))
+
+It is often helpful for a script to echo to the screen the actions it
+is performing on the filesystem and the command lines it is
+invoking. This module defines versions of many filesystem and process
+procedures that echo their arguments to the current output port.
+
+For example, executing (loud:delete-file "foo.txt") will print out
+
+  delete-file: "foo.txt"
+
+when the procedure is called. It does not imply that the deletion
+succeeds.
+
+The following procedures have the same filesystem effect as their
+mzscheme counterparts:
+
+> (loud:make-directory pathlike) -> void
+> (loud:delete-directory pathlike) -> void
+> (loud:copy-file pathlike pathlike) -> void
+> (loud:delete-file pathlike) -> void
+> (loud:rename-file-or-directory pathlike pathlike) -> void
+> (loud:make-file-or-directory-link pathlike pathlike) -> void
+
+The following procedures have the same filesystem effect as their 
+(lib "file.ss") counterparts:
+
+> (loud:make-directory* pathlike) -> void
+> (loud:copy-directory/files pathlike pathlike) -> void
+> (loud:delete-directory/files pathlike) -> void
+
+The following procedures have the same process effect as their
+(lib "process.ss") counterparts:
+
+> (loud:system string) -> boolean
+> (loud:system* string string ...) -> boolean
+> (loud:system/exit-code string) -> integer
+> (loud:system*/exit-code string string ...) -> integer
+
+> (loud:process string) -> (list input-port output-port number input-port (symbol -> any))
+> (loud:process* string string ...) -> (list input-port output-port number input-port (symbol -> any))
+> (loud:process/ports output-port/#f input-port/#f output-port/#f string) -> (list input-port/#f output-port/#f number input-port/#f (symbol -> any))
+> (loud:process*/ports output-port/#f input-port/#f output-port/#f string string ...) -> (list input-port/#f output-port/#f number input-port/#f (symbol -> any))
+
+_read.ss_
+---------
+
+To use: (require (planet "read.ss" ("ryanc" "scripting.plt" 1 1)))
+
+Scripts often need to read configuration files and data files, and it
+is often convenient to do so in one gulp.
+
+> (read-all [input-port]) -> (list-of s-expr)
+
+Calls 'read' repeatedly until end of file and returns a list of the
+s-expressions 'read' (not including the end of file object).
+
+> (read-all/file pathlike) -> (list-of s-expr)
+
+Calls 'read-all' on the contents of the given file.
+
+> (read-all-syntax [any [input-port]]) -> (list-of syntax)
+
+Calls 'read-syntax' repeatedly until end of file and returns a list of
+the syntax objects read (not including the end of file object). See the
+description of 'read-syntax; for details on the source argument.
+
+> (read-all-syntax/file pathlike) -> (list-of syntax)
+
+Calls 'read-all-syntax' on the contents of the given file. Uses the
+pathlike object as the source argument.
+
+_file.ss_
+---------
+
+To use: (require (planet "file.ss" ("ryanc" "scripting.plt" 1 1)))
+
+This module provides procedures for manipulating paths, performing
+filesystem queries and actions.
+
+The following procedures only manipulate path representations. They do
+not touch the filesystem.
+
+> (path-wrt-path pathlike pathlike) -> path
+
+Interprets the second path with respect to the first. If the second
+path is absolute, the first path is ignored. The resulting path is
+relative if both input paths were relative; otherwise, it is absolute.
+
+For example: 
+  (path-wrt-path "here" "there.txt") = #<path: here/there.txt>
+  (path-wrt-path "/home/me" "/tmp/foo") = #<path: /tmp/foo>
+
+> (replace-file-extension pathlike byteslike) -> path
+
+Like 'path-replace-suffix' in mzscheme, but only replaces the part of
+the name *after* the dot.
+
+  (replace-file-extension "a.b" "c") = #<path: a.c>
+
+> (pathlike-append pathlike ...) -> path
+
+Like 'string-append', but accepts bytes and path arguments and
+produces a path. It is *not* like 'build-path'. For example:
+
+  (pathlike-append "email" "-number-" #<path: 45.txt>)
+   = #<path: email-number-45.txt>
+
+The following procedures interact with the filesystem.
+
+> (touch pathlike) -> void
+
+Creates a file with no contents. If the file already exists, nothing
+is done (the modification time is not be updated).
+
+> (check-file-exists name-symbol pathlike) -> void
+
+If the given file does not exist, raises an exception using
+'raise-file-not-found' with the given name in the function position.
+
+> (directory-list/sorted [pathlike]) -> (list-of path)
+
+Returns the sorted contents of the given (or current) directory.
+
+> (directory-list/paths pathlike) -> (list-of path)
+
+Returns the contents of the given directory as paths such that the
+paths, interpreted with respect to the current directory, point to the
+contents of the given directory. If the directory was given as a
+relative path, they are relative to the current directory; otherwise,
+they are absolute paths.
+
+  Example:
+    (directory-list/paths "that/other/directory")
+    => (list #<path: that/other/directory/a.txt>
+             #<path: that/other/directory/b.ss>)
+
+> (directory-list/absolute pathlike) -> (list-of absolute-path)
+
+Returns a list of absolute paths referring to the contents of the
+given directory. The directory may be given as either a relative or
+absolute path.
+
+> (newer? pathlike pathlike) -> boolean
+
+Indicates whether the file indicated by the first path is newer than
+the second. If the second file does not exist, then the first is
+trivially newer.
+
+_error.ss_
+----------
+
+To use: (require (planet "error.ss" ("ryanc" "scripting.plt" 1 1)))
+
+This module provides additional exception structure types and
+exception-raising procedures.
+
+> (struct (exn:fail:filesystem:path exn:fail:filesystem) (path))
+
+> (raise-file-not-found name-symbol pathlike) -> raises exn
+
+Raises an exception of type 'exn:fail:filesystem:path' with a "file
+not found" message and the given path.
+
+_misc.ss_
+---------
+
+To use: (require (planet "misc.ss" ("ryanc" "scripting.plt" 1 1)))
+
+> (map/separated item-proc separator-proc items) -> list
+> (for-each/separated item-proc separator-proc items) -> void
+
+Like 'map' and 'for-each', but calls separator-proc on no arguments
+between every pair of items in the list. If the list contains fewer
+than two items, separator-proc will never be called.
+
+> (format-byte-count integer) -> string
+
+Displays a number as a byte count (eg, "12 KB", "153 GB").
+
+> (hash-table-put-fresh! hashtable key value) -> void
+
+Like 'hash-table-put!', but raises an exception if there is already a
+value associated with that key.
