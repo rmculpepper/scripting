@@ -1,7 +1,7 @@
 #lang racket/base
-(require racket/file
-         racket/list
-         "error.rkt")
+(require racket/contract
+         racket/file
+         racket/list)
 
 ;; Recall: path-string = path | string (with constraints)
 ;; see path-string?
@@ -48,7 +48,7 @@
   (-> path-string? string?
       path?)]
  [path-string-append
-  (->* () ((listof path-string?))
+  (->* () () #:rest (listof path-string?)
        path?)]
  [touch
   (-> path-string? void?)]
@@ -110,7 +110,7 @@
 ;; directory-list/absolute : path-string -> (list-of absolute-path)
 (define (directory-list/absolute directory)
   (let ((base (path-wrt-path (current-directory) directory)))
-    (map (lambda (entry) (build-absolute-path base entry))
+    (map (lambda (entry) (build-path base entry))
          (directory-list/sorted directory))))
 
 ;; newer? : path-string path-string -> boolean

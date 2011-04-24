@@ -16,7 +16,7 @@
   (or/c char? non-empty-string?))
 
 (define sign-mode/c
-  (or/c #f '+ '+0 'space))
+  (or/c #f '+ '++ 'space))
 
 ;; Precision is one of
 ;;   Nat, for "up to N"
@@ -138,12 +138,12 @@
          "-"]
         [(zero? N)
          (case sign-mode
-           ((+0) "+")
+           ((++) "+")
            ((space) " ")
            (else ""))]
         [(positive? N)
          (case sign-mode
-           ((+ +0) "+")
+           ((+ ++) "+")
            ((space) " ")
            (else ""))]))
 

@@ -4,14 +4,18 @@
           scribble/eval
           planet/scribble
           planet/version
-          (for-label (this-package-in file)
+          (for-label racket/base
+                     racket/contract
+                     racket/system
+                     racket/file
+                     (this-package-in file)
                      (this-package-in loud)
                      (this-package-in process)
                      (this-package-in format)))
 
 @(begin
   (define the-eval (make-base-eval))
-  (the-eval '(require racket/math "format.rkt")))
+  (the-eval '(require racket/math "format.rkt" "file.rkt" "format.rkt")))
 
 @title{Scripting utilities}
 @author[@author+email["Ryan Culpepper" "ryanc@racket-lang.org"]]
@@ -85,8 +89,9 @@ formatted output.
   components.)
 
 @examples[#:eval the-eval
-(pathlike-append "email" "-number-" (path->string "45.txt"))
+(path-string-append "email" "-number-" (string->path "45.txt"))
 ]
+}
 
 @defproc[(touch [path path-string?])
          void?]{
@@ -127,7 +132,7 @@ formatted output.
   absolute.
 }
 
-@defproc[(file-newer? [file1 path-string?] [file2 path-string?])
+@defproc[(newer? [file1 path-string?] [file2 path-string?])
          boolean?]{
 
   Returns true if
@@ -154,18 +159,20 @@ procedures that echo their arguments to the current output port.
 For example, executing @racket[(loud:delete-file "foo.txt")] will
 print out @tt{delete-file: "foo.txt"} when the procedure is called.
 
-@(define-syntax-rule (defthing* id) (defidentifier #'id))
+@(require (for-syntax racket/base))
+@;(define-syntax-rule (defit* id) (defidentifier #'id))
+@(define-syntax-rule (defit* id) (defthing id procedure?))
 
 @deftogether[[
-@defthing*[loud:make-directory]
-@defthing*[loud:delete-directory]
-@defthing*[loud:copy-file]
-@defthing*[loud:make-file-or-directory-link]
-@defthing*[loud:delete-file]
-@defthing*[loud:rename-file-or-directory]
-@defthing*[loud:make-directory*]
-@defthing*[loud:copy-directory/files]
-@defthing*[loud:delete-directory/files]]]{
+@defit*[loud:make-directory]
+@defit*[loud:delete-directory]
+@defit*[loud:copy-file]
+@defit*[loud:make-file-or-directory-link]
+@defit*[loud:delete-file]
+@defit*[loud:rename-file-or-directory]
+@defit*[loud:make-directory*]
+@defit*[loud:copy-directory/files]
+@defit*[loud:delete-directory/files]]]{
 
   Loud variants of @racket[make-directory], @racket[delete-directory],
   @racket[copy-file], @racket[make-file-or-directory-link],
@@ -175,13 +182,13 @@ print out @tt{delete-file: "foo.txt"} when the procedure is called.
 }
 
 @deftogether[[
-@defthing*[loud:system]
-@defthing*[loud:system*]
-@defthing*[loud:system/exit-code]
-@defthing*[loud:process]
-@defthing*[loud:process*]
-@defthing*[loud:system/exit-code+output]
-@defthing*[loud:system/output]]]{
+@defit*[loud:system]
+@defit*[loud:system*]
+@defit*[loud:system/exit-code]
+@defit*[loud:process]
+@defit*[loud:process*]
+@defit*[loud:system/exit-code+output]
+@defit*[loud:system/output]]]{
 
   Loud variants of @racket[system], @racket[system*],
   @racket[system/exit-code], @racket[process], @racket[process*],
@@ -272,7 +279,7 @@ as possible, and then the remaining space is filled by a @emph{prefix}
 of @racket[left-pad]. In contrast, right-padding consists of a
 @emph{suffix} of @racket[right-pad] followed by a number of copies of
 @racket[right-pad] in its entirety. In short, left-padding starts with
-the start of @racket[left-pad]; right-padding end with the end of
+the start of @racket[left-pad]; right-padding ends with the end of
 @racket[right-pad].
 
 @examples[#:eval the-eval
@@ -317,8 +324,8 @@ Equivalent to:
 
 @defproc[(%integer [x exact-integer?]
                    [#:digits-width digits-width exact-positive-integer? 1]
-                   [#:digits-pad digits-pad (or/c char? non-empty-string?) #\space]
-                   [#:sign sign (or/c #f '+ '+0 'space) #f]
+                   [#:digits-pad digits-pad (or/c char? non-empty-string?) #\0]
+                   [#:sign sign (or/c #f '+ '++ 'space) #f]
                    [#:base base (or/c 2 8 10 16) 10]
                    [#:width width exact-nonnegative-integer? 0]
                    [#:justify justify (or/c 'left 'right 'center) 'right]
@@ -329,7 +336,7 @@ Equivalent to:
 Formats an integer. Formatting is separated into two stages:
 @emph{digit formatting} and @emph{field padding}.
 
-@emph{digit formatting} is concerned with the conventions of
+@emph{Digit formatting} is concerned with the conventions of
 formatting numbers. It is controlled by @racket[digits-width],
 @racket[digits-pad], @racket[sign], and @racket[base].
 
@@ -350,7 +357,7 @@ indicated. In all cases, if the number is negative, a minus sign is
 included. In the default mode, @racket[#f], no sign output is
 generated for either positive numbers or zero. In mode @racket['+],
 positive numbers are indicated with a plus sign, but no indicator is
-generated for zero. In mode @racket['+0], both positive numbers and
+generated for zero. In mode @racket['++], both positive numbers and
 zero are indicated with a plus sign. Finally, in mode @racket['space],
 both positive numbers and zero are prefixed with a space character.}
 
@@ -365,6 +372,12 @@ field. It is controlled by @racket[width], @racket[justify],
 @racket[left-pad], and @racket[right-pad]; the options have the same
 meaning as in the @racket[%pad] function.
 
+@examples[#:eval the-eval
+(%integer 17)
+(%integer 17 #:digits-width 10)
+(%integer -22 #:digits-width 10 #:digits-pad #\space)
+(%integer -22 #:width 11)
+]
 }
 
 
@@ -376,7 +389,7 @@ meaning as in the @racket[%pad] function.
                               2]
                  [#:digits-width digits-width exact-positive-integer? 1]
                  [#:digits-pad digits-pad (or/c char? non-empty-string?) #\0]
-                 [#:sign sign (or/c #f '+ '+0 'space) #f]
+                 [#:sign sign (or/c #f '+ '++ 'space) #f]
 
                  [#:width width exact-nonnegative-integer? 0]
                  [#:justify justify (or/c 'left 'right 'center) 'right]
@@ -415,9 +428,10 @@ meaning as in the @racket[%pad] function.
 
 @examples[#:eval the-eval
 (%float pi)
-(%float #:precision 4 pi)
-(%float #:precision 4 1.5)
-(%float #:precision '(exactly 4) 1.5)
+(%float pi #:precision 4)
+(%float 1.5 #:precision 4)
+(%float 1.5 #:precision '(exactly 4))
+(%float 1.5 #:precision '(exactly 4) #:digits-width 10)
 ]
 }
 
@@ -437,4 +451,3 @@ meaning as in the @racket[%pad] function.
 }
 
 @(close-eval the-eval)
-

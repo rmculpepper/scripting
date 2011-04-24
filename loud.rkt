@@ -1,12 +1,14 @@
 #lang racket/base
-(require racket/file
+(require (for-syntax racket/base)
+         racket/file
+         racket/string
          racket/system
          "process.rkt")
 (define loud? (make-parameter #t))
 
 (define-syntax (define/provide-loud stx)
   (syntax-case stx ()
-    [(_ (fun arg ...))
+    [(_ fun)
      (with-syntax ([loud-name
                     (datum->syntax #'fun
                                    (string->symbol
