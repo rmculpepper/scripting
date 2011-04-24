@@ -17,7 +17,10 @@
   (define the-eval (make-base-eval))
   (the-eval '(require racket/math "format.rkt" "file.rkt" "format.rkt")))
 
-@title{Scripting utilities}
+@(define the-version
+   (format "~a.~a" (this-package-version-maj) (this-package-version-min)))
+
+@title[#:version the-version]{Scripting utilities}
 @author[@author+email["Ryan Culpepper" "ryanc@racket-lang.org"]]
 
 @section-index["script" "scripting"]
@@ -347,7 +350,7 @@ not including the sign character. If @racket[x] would normally be
 printed with fewer than @racket[digits-width] digits, the output is
 padded according to @racket[digits-pad].}
 
-@item{@racket[digits-pad] specifies the (left-aligned) @tech{padding}
+@item{@racket[digits-pad] specifies the (left-aligned) padding
 used to pad the formatting number to at least @racket[digits-width]
 characters (not including the sign character). The padding is placed
 between the sign and the normal digits of @racket[x].}
