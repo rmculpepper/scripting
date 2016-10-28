@@ -20,7 +20,7 @@
 @(define the-version
    (format "~a.~a" (this-package-version-maj) (this-package-version-min)))
 
-@title[#:version the-version]{Scripting utilities}
+@title[#:version the-version]{scripting: Scripting utilities}
 @author[@author+email["Ryan Culpepper" "ryanc@racket-lang.org"]]
 
 @section-index["script" "scripting"]
@@ -138,13 +138,13 @@ formatted output.
 @defproc[(newer? [file1 path-string?] [file2 path-string?])
          boolean?]{
 
-  Returns true if
-  @itemlist[
-  @item{@racket[file1] exists but @racket[file2] does not}
-  @item{both @racket[file1] and @racket[file2] exist, and
+Returns true if either
+@itemlist[
+@item{@racket[file1] exists but @racket[file2] does not; or}
+@item{both @racket[file1] and @racket[file2] exist, and
   @racket[file1]'s modification time is later than @racket[file2]'s
   modification time}
-  ]
+]
 }
 
 
